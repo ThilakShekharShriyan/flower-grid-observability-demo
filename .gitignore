@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+
+# Envs / secrets (never commit)
+.env
+.env.*
+secrets.env
+*.pem
+*.key
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Local runtime (lives under ~/.flwr and /tmp; keep out if copied here)
+*.db
+*.db-shm
+*.db-wal
+flwr_logs/
+
+# Flower fork is its own git repo
+flower/
