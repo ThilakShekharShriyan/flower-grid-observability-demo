@@ -139,8 +139,8 @@ def main() -> None:
     parser.add_argument(
         "--timeout",
         type=float,
-        default=90.0,
-        help="Seconds to wait for Prometheus to show the node offline",
+        default=20.0,
+        help="Seconds to wait for Prometheus offline / online (default: 20)",
     )
     args = parser.parse_args()
     site = args.site
@@ -226,16 +226,29 @@ def main() -> None:
         f"Restarted {site} as pid {proc.pid}. Waiting for it to reappear…",
         flush=True,
     )
-    deadline = time.time() + 60.0
+    deadline = time.time() + args.timeout
+    restored = False
     while time.time() < deadline:
         if site in online_sites():
             print(f"{site} is online again.", flush=True)
-            return
-        time.sleep(2.0)
-    print(
-        f"{site} restart launched but not online yet — check SuperLink auth/TLS.",
-        flush=True,
-    )
+            restored = True
+            break
+        time.sleep(1.0)
+    if not restored:
+        print(
+            f"{site} restart launched but not online yet — check SuperLink auth/TLS.",
+            flush=True,
+        )
+
+    # Clear sticky exclude/pause from the alert path so training metrics resume.
+    try:
+        from flwr.supercore.task_process.connector.fleet_ops import control
+
+        control.set_excluded(site, excluded=False, reason="simulate_node_down restore")
+        control.set_pause(False, "simulate_node_down restore")
+        print(f"Cleared exclude for {site} and resumed training.", flush=True)
+    except Exception as exc:  # noqa: BLE001
+        print(f"Could not clear control state: {type(exc).__name__}: {exc}", flush=True)
 
 
 if __name__ == "__main__":
